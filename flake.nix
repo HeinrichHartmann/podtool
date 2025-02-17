@@ -6,28 +6,37 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils, ... }:
+  outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs { inherit system; };
-      in {
-        packages.podtool = pkgs.stdenv.mkDerivation {
-          name = "podtool-${self.version or "1.0.0"}";
+        pkgs = nixpkgs.legacyPackages.${system};
+      in
+      {
+        packages.default = pkgs.python3Packages.buildPythonApplication {
+          pname = "podtool";
           version = "1.0.0";
           src = ./.;
-          dontBuild = true;
-          installPhase = ''
-            mkdir -p $out/bin
-            cp podtool.sh $out/bin/podtool
-            chmod +x $out/bin/podtool
+          format = "pyproject";
 
-            # Replace the placeholder values in the script
-            substituteInPlace $out/bin/podtool \
-              --replace 'CMD_FFMPEG' '${pkgs.ffmpeg}/bin/ffmpeg' \
-              --replace 'CMD_SOX' '${pkgs.sox}/bin/sox'
-          '';
+          propagatedBuildInputs = with pkgs.python3Packages; [
+            setuptools
+            click
+          ];
+
+          nativeBuildInputs = with pkgs; [
+            ffmpeg
+            sox
+          ];
         };
 
-        defaultPackage = self.packages.${system}.podtool;
-      });
+        devShells.default = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            python3
+            python3Packages.click
+            ffmpeg
+            sox
+          ];
+        };
+      }
+    );
 }
