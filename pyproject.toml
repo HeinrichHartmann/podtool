@@ -8,4 +8,4 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
-podtool = "podtool:cli" 
+podtool = "podtool.main:cli"
