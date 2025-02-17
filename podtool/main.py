@@ -2,7 +2,9 @@
 
 import click
 import subprocess
+import os
 from pathlib import Path
+from podtool.transcript import Transcript
 
 VERSION = "1.0.0"
 
@@ -58,6 +60,43 @@ def edit(input_file):
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
         click.echo(f"Error launching Audacity: {e}", err=True)
+        raise click.Abort()
+
+@cli.group()
+def transcript():
+    """Transcript management commands"""
+    pass
+
+@transcript.command()
+@click.argument('input_file', type=click.Path(exists=True))
+@click.option('-o', '--output', default=None, help='Output file name (defaults to input_file with _refined suffix)')
+def refine(input_file, output):
+    """Refine a transcript file by cleaning up formatting and common issues"""
+    # Get API key from environment
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        click.echo("Error: OPENAI_API_KEY environment variable not set", err=True)
+        raise click.Abort()
+    
+    input_path = Path(input_file)
+    if output is None:
+        output = str(input_path.with_stem(input_path.stem + '_refined'))
+    
+    click.echo(f"Refining transcript {input_file} to {output}...")
+    
+    try:
+        transcript = Transcript(api_key)
+        with open(input_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        refined_content = transcript.refine(content)
+        
+        with open(output, 'w', encoding='utf-8') as f:
+            f.write(refined_content)
+            
+        click.echo(f"Transcript refined successfully. Output saved to {output}")
+    except Exception as e:
+        click.echo(f"Error refining transcript: {e}", err=True)
         raise click.Abort()
 
 if __name__ == '__main__':

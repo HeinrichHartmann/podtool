@@ -1,4 +1,4 @@
-.PHONY: build install clean
+.PHONY: build install clean shell
 
 # Build the podtool flake package, which produces a symlink such as ./result
 build:
@@ -14,3 +14,8 @@ install: build
 # Optional clean target
 clean:
 	@echo "No cleanup is necessary in this setup."
+
+# Enter a development shell with all dependencies
+shell:
+	@echo "Entering development shell..."
+	nix develop .

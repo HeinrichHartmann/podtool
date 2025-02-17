@@ -13,10 +13,12 @@
         inputs = (with pkgs.python3Packages; [
             setuptools
             click
+            openai
           ]) ++ (with pkgs; [
             ffmpeg
             sox
             audacity
+            
           ]);
       in
       {
