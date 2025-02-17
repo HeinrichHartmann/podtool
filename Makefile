@@ -8,6 +8,7 @@ build:
 # Install the podtool package to your Nix user profile using nix profile (Nix 2.4+)
 install: build
 	@echo "Installing podtool from flake..."
+	nix profile remove podtool
 	nix profile install .
 
 # Optional clean target

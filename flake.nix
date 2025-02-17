@@ -10,6 +10,14 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        inputs = (with pkgs.python3Packages; [
+            setuptools
+            click
+          ]) ++ (with pkgs; [
+            ffmpeg
+            sox
+            audacity
+          ]);
       in
       {
         packages.default = pkgs.python3Packages.buildPythonApplication {
@@ -17,25 +25,11 @@
           version = "1.0.0";
           src = ./.;
           format = "pyproject";
-
-          propagatedBuildInputs = with pkgs.python3Packages; [
-            setuptools
-            click
-          ];
-
-          nativeBuildInputs = with pkgs; [
-            ffmpeg
-            sox
-          ];
+          propagatedBuildInputs = inputs;
         };
 
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            python3
-            python3Packages.click
-            ffmpeg
-            sox
-          ];
+          buildInputs = inputs;
         };
       }
     );

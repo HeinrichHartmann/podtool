@@ -27,7 +27,7 @@ def mix(output, input_files):
         raise click.Abort()
 
 @cli.command()
-@click.option('-o', '--output', default='recode.mp3', help='Output file name')
+@click.option('-o', '--output', default='mix.mp3', help='Output file name')
 @click.argument('input_file', type=click.Path(exists=True))
 def recode(output, input_file):
     """Convert provided audio file to MP3 format with high quality settings"""
@@ -45,6 +45,19 @@ def recode(output, input_file):
         click.echo(f"Conversion complete. Output file: {output}")
     except subprocess.CalledProcessError as e:
         click.echo(f"Error converting audio file: {e}", err=True)
+        raise click.Abort()
+
+@cli.command()
+@click.argument('input_file', type=click.Path(exists=True))
+def edit(input_file):
+    """Open audio file in Audacity for editing"""
+    click.echo(f"Opening {input_file} in Audacity...")
+    
+    try:
+        cmd = ['audacity', str(input_file)]
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        click.echo(f"Error launching Audacity: {e}", err=True)
         raise click.Abort()
 
 if __name__ == '__main__':
