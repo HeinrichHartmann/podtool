@@ -12,3 +12,7 @@ packages = ["podtool"]
 
 [project.scripts]
 podtool = "podtool.main:cli"
+
+[tool.poetry.dependencies]
+google-cloud-storage = "^2.14.0"
+google-cloud-speech = "^2.24.0"

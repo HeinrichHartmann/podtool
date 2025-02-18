@@ -27,7 +27,12 @@ def cli(verbose):
     logging.debug(f"Verbosity level set to {verbose}")
     pass
 
-@cli.command()
+@cli.group()
+def audio():
+    """Audio processing commands"""
+    pass
+
+@audio.command()
 @click.option('-o', '--output', default='mix.wav', help='Output file name')
 @click.argument('input_files', nargs=-1, required=True, type=click.Path(exists=True))
 def mix(output, input_files):
@@ -42,7 +47,7 @@ def mix(output, input_files):
         click.echo(f"Error mixing audio files: {e}", err=True)
         raise click.Abort()
 
-@cli.command()
+@audio.command()
 @click.option('-o', '--output', default='mix.mp3', help='Output file name')
 @click.argument('input_file', type=click.Path(exists=True))
 def recode(output, input_file):
@@ -63,7 +68,7 @@ def recode(output, input_file):
         click.echo(f"Error converting audio file: {e}", err=True)
         raise click.Abort()
 
-@cli.command()
+@audio.command()
 @click.argument('input_file', type=click.Path(exists=True))
 def edit(input_file):
     """Open audio file in Audacity for editing"""
@@ -74,6 +79,36 @@ def edit(input_file):
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
         click.echo(f"Error launching Audacity: {e}", err=True)
+        raise click.Abort()
+
+@audio.command()
+@click.argument('input_file', type=click.Path(exists=True))
+@click.option('-l', '--length', default='1:00:00', help='Length of each segment in HH:MM:SS format (default: 1 hour)')
+@click.option('-o', '--output-pattern', default=None, help='Output filename pattern (default: input_001.ext)')
+def split(input_file, length, output_pattern):
+    """Split audio file into segments of equal length"""
+    input_path = Path(input_file)
+    
+    if output_pattern is None:
+        # Create default pattern: input_001.ext
+        output_pattern = f"{input_path.stem}_%03d{input_path.suffix}"
+    
+    click.echo(f"Splitting {input_file} into segments of {length}...")
+    
+    try:
+        cmd = [
+            'ffmpeg', '-y',
+            '-i', str(input_file),
+            '-f', 'segment',
+            '-segment_time', length,
+            '-c', 'copy',  # Copy without re-encoding
+            '-reset_timestamps', '1',
+            output_pattern
+        ]
+        subprocess.run(cmd, check=True)
+        click.echo(f"Audio file split successfully using pattern: {output_pattern}")
+    except subprocess.CalledProcessError as e:
+        click.echo(f"Error splitting audio file: {e}", err=True)
         raise click.Abort()
 
 @cli.group()

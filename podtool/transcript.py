@@ -1,4 +1,8 @@
 import openai
+import logging
+
+logger = logging.getLogger(__name__)
+
 class Transcript:
     
     model: str = "gpt-4o-mini"
@@ -78,6 +82,7 @@ class Transcript:
         Summarize the content of the transcript by breaking it into focused sub-tasks
         """
 
+        logger.info("Creating title")
         title_prompt = """
         You are an expert podcast editor, analyzing a transcript from "CaSE – Conversations about Software Architecture".
 
@@ -85,7 +90,6 @@ class Transcript:
         the main topic discussed. 
         Format your response as bullet point list.
         """
-        
         titles_response = openai.chat.completions.create(
             model=self.model,
             messages=[
@@ -94,7 +98,8 @@ class Transcript:
             ],
             temperature=0.7,
         )
-
+        
+        logger.info("Creating teaser")
         teaser_prompt = """
         You are an expert podcast editor, analyzing a transcript from "CaSE – Conversations about Software Architecture".
 
@@ -112,6 +117,7 @@ class Transcript:
             temperature=0.4,
         )
         
+        logger.info("Creating chapters")
         chapters_prompt = """
         You are an expert podcast editor, analyzing a transcript from "CaSE – Conversations about Software Architecture".
 
@@ -134,6 +140,7 @@ class Transcript:
             temperature=0.2,
         )
         
+        logger.info("Creating takeaways")
         takeaway_prompt = """
         You are an expert podcast editor, analyzing a transcript from "CaSE – Conversations about Software Architecture".
 
@@ -148,11 +155,33 @@ class Transcript:
             temperature=0.5,
         )
         
+        logger.info("Creating shownotes")
+        shownotes_prompt = """
+        You are an expert podcast editor, analyzing a transcript from "CaSE – Conversations about Software Architecture".
+
+        Extract a list of shownotes for the episode, i.e. references to the things that were mentioned.
+        You don't need to include the links, just name relevant things that were mentioned.
+        """
+        shownotes_response = openai.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": shownotes_prompt},
+                {"role": "user", "content": content}
+            ],
+            temperature=0.5,
+        )
+        
         return (
+            f"# Title\n\n"
             f"{titles_response.choices[0].message.content}\n\n"
+            f"# Teaser\n\n"
             f"{teaser_response.choices[0].message.content}\n\n"
+            f"# Chapters\n\n"
             f"{chapters_response.choices[0].message.content}\n\n"
-            f"{takeaway_response.choices[0].message.content}"
+            f"# Takeaways\n\n"
+            f"{takeaway_response.choices[0].message.content}\n\n"
+            f"# Shownotes\n\n"
+            f"{shownotes_response.choices[0].message.content}\n\n"
         )
 
     def critique(self, content):
