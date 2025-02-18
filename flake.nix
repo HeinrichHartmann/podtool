@@ -14,6 +14,8 @@
             setuptools
             click
             openai
+            opentelemetry-api
+            opentelemetry-sdk
           ]) ++ (with pkgs; [
             ffmpeg
             sox

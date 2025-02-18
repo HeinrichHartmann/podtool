@@ -1,16 +1,30 @@
 #!/usr/bin/env python3
-
 import click
 import subprocess
 import os
+import logging
 from pathlib import Path
-from podtool.transcript import Transcript
+from .transcript import Transcript
 
-VERSION = "1.0.0"
+def setup_logging(verbosity):
+    """Configure logging based on verbosity level"""
+    log_levels = {
+        0: logging.WARNING,  # Default
+        1: logging.INFO,     # -v
+        2: logging.DEBUG,    # -vv
+    }
+    level = log_levels.get(verbosity, logging.DEBUG)
+    logging.basicConfig(
+        level=level,
+        format='%(levelname)s: %(message)s' if level > logging.DEBUG else '%(levelname)s: [%(filename)s:%(lineno)d] %(message)s'
+    )
 
 @click.group()
-def cli():
+@click.option('-v', '--verbose', count=True, help='Increase verbosity (use -v, -vv, or -vvv for more detailed output)')
+def cli(verbose):
     """Podtool - Audio processing and transcript refinement utility"""
+    setup_logging(verbose)
+    logging.debug(f"Verbosity level set to {verbose}")
     pass
 
 @cli.command()
@@ -97,6 +111,68 @@ def refine(input_file, output):
         click.echo(f"Transcript refined successfully. Output saved to {output}")
     except Exception as e:
         click.echo(f"Error refining transcript: {e}", err=True)
+        raise click.Abort()
+    
+@transcript.command()
+@click.argument('input_file', type=click.Path(exists=True))
+@click.option('-o', '--output', default=None, help='Output file name (defaults to input_file with _summary suffix)')
+def summarize(input_file, output):
+    """Summarize a transcript file"""
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        click.echo("Error: OPENAI_API_KEY environment variable not set", err=True)
+        raise click.Abort()
+    
+    input_path = Path(input_file)
+    if output is None:
+        output = str(input_path.with_stem(input_path.stem + '_summary'))
+    
+    click.echo(f"Summarizing transcript {input_file} to {output}...")
+    
+    try:
+        transcript = Transcript(api_key)
+        with open(input_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        summary = transcript.summarize(content)
+        
+        with open(output, 'w', encoding='utf-8') as f:
+            f.write(summary)
+            
+        click.echo(f"Transcript summarized successfully. Output saved to {output}")
+    except Exception as e:
+        click.echo(f"Error summarizing transcript: {e}", err=True)
+        raise click.Abort()
+
+@transcript.command()
+@click.argument('input_file', type=click.Path(exists=True))
+@click.option('-o', '--output', default=None, help='Output file name (defaults to input_file with _critique suffix)')
+def critique(input_file, output):
+    """Analyze the podcast transcript and provide detailed feedback for improvement"""
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        click.echo("Error: OPENAI_API_KEY environment variable not set", err=True)
+        raise click.Abort()
+    
+    input_path = Path(input_file)
+    if output is None:
+        output = str(input_path.with_stem(input_path.stem + '_critique'))
+    
+    click.echo(f"Analyzing podcast transcript {input_file} and generating critique to {output}...")
+    
+    try:
+        transcript = Transcript(api_key)
+        with open(input_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        critique = transcript.critique(content)
+        
+        with open(output, 'w', encoding='utf-8') as f:
+            f.write(critique)
+            
+        click.echo(f"Podcast critique generated successfully. Output saved to {output}")
+    except Exception as e:
+        click.echo(f"Error generating podcast critique: {e}", err=True)
         raise click.Abort()
 
 if __name__ == '__main__':
