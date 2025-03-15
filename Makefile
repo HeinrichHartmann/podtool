@@ -1,8 +1,5 @@
 .PHONY: build install clean shell
 
-dev:
-	uv run python -m podtool.main
-
 build: # produces ./result/bin/podtool
 	nix build .
 
