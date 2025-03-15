@@ -5,6 +5,7 @@ import os
 import logging
 from pathlib import Path
 from .transcript import Transcript
+from .transcribe import Speech2Text
 
 def setup_logging(verbosity):
     """Configure logging based on verbosity level"""
@@ -109,6 +110,23 @@ def split(input_file, length, output_pattern):
         click.echo(f"Audio file split successfully using pattern: {output_pattern}")
     except subprocess.CalledProcessError as e:
         click.echo(f"Error splitting audio file: {e}", err=True)
+        raise click.Abort()
+
+@audio.command()
+@click.argument('input_file', type=click.Path(exists=True))
+def transcribe(input_file):
+    """Generate a transcript from an audio file"""
+    click.echo(f"Transcribing {input_file}...")
+    try:
+        transcriber = Speech2Text(credentials_path=os.getenv('GOOGLE_SERVICE_CREDENTIALS'))
+        text = transcriber.process(input_file)
+        output_file = str(Path(input_file).with_suffix('.txt'))
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(text)
+        
+        click.echo(f"Transcription complete. Output saved to {output_file}")
+    except Exception as e:
+        click.echo(f"Error during transcription: {e}", err=True)
         raise click.Abort()
 
 @cli.group()
